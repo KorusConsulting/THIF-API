@@ -39,6 +39,9 @@ def create_client(context, row):
     """
     kwargs = dict((CSV_DB_MAPPER[CSV_FIELDS[idx]],
                    el) for idx, el in enumerate(row))
+    if kwargs['policy_number'].endswith(',00'):
+        kwargs['policy_number'] = rreplace(kwargs['policy_number'],
+                                           ',00', '', 1)
     return context['Client'](**kwargs)
 
 
