@@ -167,7 +167,6 @@ def load_files(context):
 def configure_cron(config):
     cron = CronTab(config['cron']['user'])
     command = "python %s %s" % (os.path.realpath(__file__), "csv")
-    print cron.find_command(command)
     for job in cron.find_command(command):
         cron.remove(job)
 
