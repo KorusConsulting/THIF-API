@@ -7,6 +7,7 @@ import json
 import glob
 import os
 import csv
+import logging
 
 
 CSV_FIELDS = ('id', 'enp', 'fam', 'IM', 'ot', 'w', 'dr',
@@ -81,6 +82,12 @@ def read_config(path):
         return config
 
 
+def set_logging(config):
+    logging.basicConfig(format='[%(levelname)s]%(asctime)s: %(message)s',
+                        filename=config['logfile'], level=logging.INFO)
+    return config
+
+
 def db_connect(config):
     """
     connects to the database, defines table class, creates table if necessary
@@ -151,10 +158,11 @@ def csv_main():
     main function for loading data into database
     """
     config = bind(read_config, make_mv('config.json'))
+    config = bind(set_logging, config)
     context = bind(db_connect, config)
     context = bind(find_files, context)
     context = bind(load_files, context)
-    return context[1] or 'OK'
+    return context[1] or 'csv imported'
 
 
 def cron_main():
@@ -163,13 +171,13 @@ def cron_main():
     """
     config = bind(read_config, make_mv('config.json'))
     config = bind(configure_cron, config)
-    return config[1] or 'OK'
+    return config[1] or 'cron configured'
 
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument('mode', choices=('csv', 'cron'))
     opt = parser.parse_args()
     if opt.mode == 'csv':
-        print csv_main()
+        logging.info(csv_main())
     elif opt.mode == 'cron':
-        print cron_main()
+        logging.info(cron_main())
