@@ -1,10 +1,8 @@
-from datetime import datetime
 from argparse import ArgumentParser
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import create_engine, Column, Integer
-from sqlalchemy.dialects.mysql import VARCHAR, TINYINT, DATE, BIGINT
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from crontab import CronTab
+from db import create_client_class
 import json
 import glob
 import os
@@ -32,18 +30,6 @@ CSV_DB_MAPPER = {
     'lpudt': 'reg_date',
     'enp': 'UPN',
 }
-
-Base = declarative_base()
-
-
-def client_init(self, **kwargs):
-    for k in kwargs:
-        if isinstance(getattr(self.__class__, k).type, DATE):
-            try:
-                kwargs[k] = datetime.strptime(kwargs[k], "%d.%m.%Y")
-            except ValueError:
-                kwargs[k] = None
-        setattr(self, k, kwargs[k])
 
 
 def create_client(context, row):
@@ -104,27 +90,7 @@ def db_connect(config):
                                                  config['db_name'])
     engine = create_engine(connection)
     config['session'] = sessionmaker(bind=engine)()
-    config['Client'] = type('Client', (Base, ), {
-        'patient_id': Column(Integer),
-        'lastname': Column(VARCHAR(30)),
-        'firstName': Column(VARCHAR(30)),
-        'midname': Column(VARCHAR(30)),
-        'sex': Column(TINYINT(4)),
-        'birthdate': Column(DATE),
-        'doc_series': Column(VARCHAR(8)),
-        'doc_number': Column(VARCHAR(16)),
-        'doc_code': Column(Integer),
-        'policy_series': Column(VARCHAR(16)),
-        'policy_number': Column(VARCHAR(16)),
-        'policy_doctype': Column(Integer),
-        'insurance_orgcode': Column(VARCHAR(12)),
-        'LPU': Column(VARCHAR(12)),
-        'reg_date': Column(DATE),
-        'UPN': Column(BIGINT, primary_key=True),
-        '__tablename__': config['table_name'],
-        '__init__': client_init,
-    })
-    Base.metadata.create_all(engine, checkfirst=True)
+    config['Client'] = create_client_class(engine, config['table_name'])
     return config
 
 
