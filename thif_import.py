@@ -127,8 +127,8 @@ def load_files(context):
             fields = tuple(reader.next())
             if fields != CSV_FIELDS:
                 raise ValueError("%s: wrong fields" % csv_path)
-
             for row in reader:
+                row = [item.decode("cp1251") for item in row]
                 c = create_client(context, row)
                 session.add(c)
         try:
