@@ -21,8 +21,8 @@ with open('config.json') as f:
     app.config['DB_NAME'] = config['db_name']
     app.config['TABLE_NAME'] = config['table_name']
     app.config['LOG_FILE'] = config['logfile']
-    app.config['API_LOGIN'] = config['api_login']
-    app.config['API_PASSWORD'] = config['api_password']
+    app.config['USER'] = {'LOGIN': config['api_login'],
+                          'PASSWORD': config['api_password']}
     connect = "mysql://%s:%s@localhost/%s" % (config['username'],
                                               config['password'],
                                               config['db_name'])
@@ -42,30 +42,25 @@ class APIEncoder(json.JSONEncoder):
 
 
 class User(UserMixin):
-    created_users = {}
-
     def __init__(self, login, password):
         self.login = login
         self.password = password
-        User.created_users[login] = self
-
-    def __del__(self):
-        if self.login in self.created_users:
-            del self.created_users[self.login]
 
     def get_id(self):
         return self.login
 
     def is_authenticated(self):
-        if self.login == app.config['API_LOGIN'] and\
-          self.password == app.config['API_PASSWORD']:
+        if self.login == app.config['USER']["LOGIN"] and\
+          self.password == app.config['USER']["PASSWORD"]:
             return True
         return False
 
 
 @login_manager.user_loader
 def load_user(userid):
-    return User.created_users[userid]
+    if userid == app.config["USER"]["LOGIN"]:
+        return User(userid, app.config["USER"]["PASSWORD"])
+    return None
 
 
 @app.route("/login", methods=["POST"])
