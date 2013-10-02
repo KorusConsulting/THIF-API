@@ -2,9 +2,8 @@ from flask import Flask, request
 from flask.ext.login import (LoginManager, UserMixin, login_user,
                              login_required, current_user)
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, and_
 from sqlalchemy.exc import OperationalError
-from sqlalchemy import and_
 from db import create_client_class
 from datetime import date, datetime
 import logging
@@ -22,10 +21,14 @@ with open('config.json') as f:
     app.config['DB_NAME'] = config['db_name']
     app.config['TABLE_NAME'] = config['table_name']
     app.config['LOG_FILE'] = config['logfile']
+    app.config['API_LOGIN'] = config['api_login']
+    app.config['API_PASSWORD'] = config['api_password']
     connect = "mysql://%s:%s@localhost/%s" % (config['username'],
                                               config['password'],
                                               config['db_name'])
-    Client = create_client_class(create_engine(connect), config['table_name'])
+    engine = create_engine(connect)
+    Client = create_client_class(engine, config['table_name'])
+    app.config['SESSION'] = sessionmaker(bind=engine)()
     del config
     del connect
 
@@ -44,10 +47,7 @@ class User(UserMixin):
     def __init__(self, login, password):
         self.login = login
         self.password = password
-        connection = 'mysql://%s:%s@localhost/%s' % (login, password,
-                                                     app.config['DB_NAME'])
-        self.engine = create_engine(connection)
-        self.created_users[login] = self
+        User.created_users[login] = self
 
     def __del__(self):
         if self.login in self.created_users:
@@ -57,11 +57,10 @@ class User(UserMixin):
         return self.login
 
     def is_authenticated(self):
-        try:
-            self.engine.connect()
+        if self.login == app.config['API_LOGIN'] and\
+          self.password == app.config['API_PASSWORD']:
             return True
-        except OperationalError:
-            return False
+        return False
 
 
 @login_manager.user_loader
@@ -92,7 +91,7 @@ def search():
         q = []
         for k, v in data.iteritems():
             q.append(getattr(Client, k) == v)
-        session = sessionmaker(bind=current_user.engine)()
+        session = app.config['SESSION']
         res = list(session.query(Client).filter(and_(*q)).all())
         attrs = [x for x in dir(Client)
                  if not x.startswith('_') and x != "metadata"]
@@ -115,7 +114,7 @@ def check():
         q = []
         for k, v in data.iteritems():
             q.append(getattr(Client, k) == v)
-        session = sessionmaker(bind=current_user.engine)()
+        session = app.config['SESSION']
         count = session.query(Client).filter(and_(*q)).count()
         if count > 0:
             return "true"
