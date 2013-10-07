@@ -1,9 +1,8 @@
 from flask import Flask, request
 from flask.ext.login import (LoginManager, UserMixin, login_user,
-                             login_required, current_user)
+                             login_required)
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, and_
-from sqlalchemy.exc import OperationalError
 from db import create_client_class
 from datetime import date, datetime
 import logging
