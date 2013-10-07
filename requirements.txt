@@ -2,3 +2,4 @@ sqlalchemy
 python-dateutil==1.5
 python-crontab
 flask
+flask-login
