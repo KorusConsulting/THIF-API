@@ -18,6 +18,9 @@ def client_init(self, **kwargs):
 
 
 def create_client_class(engine, tablename):
+    if tablename in Base.metadata.tables:
+        return Base.metadata.tables[tablename]
+
     Client = type('Client', (Base, ), {
         'patient_id': Column(Integer),
         'lastname': Column(VARCHAR(30)),
