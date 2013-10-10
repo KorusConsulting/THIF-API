@@ -106,7 +106,7 @@ def db_connect(config):
     connection = "mysql://%s:%s@localhost/%s" % (config['username'],
                                                  config['password'],
                                                  config['db_name'])
-    engine = create_engine(connection)
+    engine = create_engine(connection, encoding='utf8')
     config['session'] = sessionmaker(bind=engine)()
     config['Client'] = create_client_class(engine, config['table_name'])
     return config
