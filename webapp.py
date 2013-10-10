@@ -1,3 +1,5 @@
+ # -*- coding: utf-8 -*-
+
 from flask import Flask, request
 from flask.ext.login import (LoginManager, UserMixin, login_user,
                              login_required)
