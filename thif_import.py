@@ -11,6 +11,7 @@ import os
 import csv
 import logging
 import sys
+import traceback
 
 
 CSV_FIELDS = ('id', 'enp', 'fam', 'IM', 'ot', 'w', 'dr',
@@ -68,9 +69,10 @@ def bind(mf, mv, *args, **kwargs):
         try:
             return make_mv(mf(value, *args, **kwargs))
         except Exception as e:
-            tb = sys.exc_info()[2]
+            exc_lnum = traceback.extract_tb(sys.exc_info()[2])[-1][1]
             exc_type = type(e).__name__
-            exc_string = "[%s] %s (%s): %s" % (mf.__name__, tb.tb_lineno, exc_type, str(e))
+            exc_string = "[%s] %s (%s): %s" % (mf.__name__, exc_lnum,
+                                               exc_type, str(e))
             return make_mv(e=exc_string)
     return mv
 
