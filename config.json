@@ -3,6 +3,7 @@
     "api_password": "mypassword",
     "username": "root",
     "password": "123456",
+    "secret_key": "ede4c6bc41bec99a7c38ec3b4f81fb",
     "db_name": "thif",
     "csv_path": "/Users/gerrrr/Work/thif",
     "delimiter": ";",

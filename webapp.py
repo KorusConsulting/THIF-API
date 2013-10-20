@@ -8,17 +8,16 @@ from sqlalchemy import create_engine, and_
 from db import create_client_class
 from datetime import date
 import logging
-import os
-import binascii
 import json
 
 
 app = Flask(__name__)
 login_manager = LoginManager()
 login_manager.init_app(app)
-app.config['SECRET_KEY'] = binascii.b2a_hex(os.urandom(15))
+
 with open('config.json') as f:
     config = json.loads(f.read())
+    app.config['SECRET_KEY'] = config['secret_key']
     app.config['DB_NAME'] = config['db_name']
     app.config['TABLE_NAME'] = config['table_name']
     app.config['LOG_FILE'] = config['logfile']
