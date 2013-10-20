@@ -3,6 +3,7 @@
 from argparse import ArgumentParser
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import IntegrityError
 from crontab import CronTab
 from db import create_client_class
 import json
@@ -37,16 +38,20 @@ CSV_DB_MAPPER = {
 }
 
 
-def create_client(context, row):
-    """
-    creates class instance for row of table
-    """
+def client_params(context, row):
     kwargs = dict((CSV_DB_MAPPER[CSV_FIELDS[idx]],
                    el) for idx, el in enumerate(row))
     if kwargs['policy_number'].endswith(',00'):
         kwargs['policy_number'] = rreplace(kwargs['policy_number'],
                                            ',00', '', 1)
-    return context['Client'](**kwargs)
+    return kwargs
+
+
+def create_client(context, row):
+    """
+    creates class instance for row of table
+    """
+    return context['Client'](**client_params(context, row))
 
 
 def rreplace(s, old, new, occurrence):
@@ -138,13 +143,17 @@ def load_files(context):
             for row in reader:
                 row = [item.decode("cp1251") for item in row]
                 c = create_client(context, row)
-                session.add(c)
-        try:
-            session.commit()
-            os.rename(csv_path, rreplace(csv_path, '.csv', '_loaded.csv', 1))
-        except Exception as e:
-            session.rollback()
-            raise e
+                try:
+                    session.add(c)
+                    session.commit()
+                except IntegrityError:
+                    session.rollback()
+                    obj = session.query(context['Client']).\
+                      filter_by(UPN=c.UPN).first()
+                    obj.set_attrs(**client_params(context, row))
+                    session.add(obj)
+                    session.commit()
+        os.rename(csv_path, rreplace(csv_path, '.csv', '_loaded.csv', 1))
     return context
 
 

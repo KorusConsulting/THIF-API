@@ -1,7 +1,7 @@
 from sqlalchemy.dialects.mysql import TINYINT, DATE, BIGINT
 from sqlalchemy import Column, Integer, Unicode
 from sqlalchemy.ext.declarative import declarative_base
-from datetime import datetime
+from datetime import datetime, date
 
 
 Base = declarative_base()
@@ -9,7 +9,8 @@ Base = declarative_base()
 
 def client_init(self, **kwargs):
     for k in kwargs:
-        if isinstance(getattr(self.__class__, k).type, DATE):
+        if isinstance(getattr(self.__class__, k).type, DATE) and\
+          not isinstance(kwargs[k], date):
             try:
                 kwargs[k] = datetime.strptime(kwargs[k], "%d.%m.%Y")
             except ValueError:
@@ -38,6 +39,7 @@ def create_client_class(engine, tablename):
         'LPU': Column(Unicode(12)),
         'reg_date': Column(DATE),
         'UPN': Column(BIGINT, primary_key=True),
+        'set_attrs': client_init,
         '__tablename__': tablename,
         '__init__': client_init,
     })
