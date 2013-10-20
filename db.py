@@ -1,5 +1,5 @@
-from sqlalchemy.dialects.mysql import VARCHAR, TINYINT, DATE, BIGINT
-from sqlalchemy import Column, Integer
+from sqlalchemy.dialects.mysql import TINYINT, DATE, BIGINT
+from sqlalchemy import Column, Integer, Unicode
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 
@@ -23,19 +23,19 @@ def create_client_class(engine, tablename):
 
     Client = type('Client', (Base, ), {
         'patient_id': Column(Integer),
-        'lastname': Column(VARCHAR(30)),
-        'firstName': Column(VARCHAR(30)),
-        'midname': Column(VARCHAR(30)),
+        'lastname': Column(Unicode(30)),
+        'firstName': Column(Unicode(30)),
+        'midname': Column(Unicode(30)),
         'sex': Column(TINYINT(4)),
         'birthdate': Column(DATE),
-        'doc_series': Column(VARCHAR(8)),
-        'doc_number': Column(VARCHAR(16)),
+        'doc_series': Column(Unicode(8)),
+        'doc_number': Column(Unicode(16)),
         'doc_code': Column(Integer),
-        'policy_series': Column(VARCHAR(16)),
-        'policy_number': Column(VARCHAR(16)),
+        'policy_series': Column(Unicode(16)),
+        'policy_number': Column(Unicode(16)),
         'policy_doctype': Column(Integer),
-        'insurance_orgcode': Column(VARCHAR(12)),
-        'LPU': Column(VARCHAR(12)),
+        'insurance_orgcode': Column(Unicode(12)),
+        'LPU': Column(Unicode(12)),
         'reg_date': Column(DATE),
         'UPN': Column(BIGINT, primary_key=True),
         '__tablename__': tablename,
