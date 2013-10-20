@@ -6,7 +6,7 @@ from flask.ext.login import (LoginManager, UserMixin, login_user,
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, and_
 from db import create_client_class
-from datetime import date, datetime
+from datetime import date
 import logging
 import os
 import binascii
@@ -37,7 +37,7 @@ with open('config.json') as f:
 class APIEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, date):
-            return datetime.strftime(obj, "%d.%m.%Y")
+            return str(obj)
         else:
             return super(APIEncoder, self).default(obj)
 

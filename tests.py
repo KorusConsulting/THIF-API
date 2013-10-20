@@ -43,6 +43,10 @@ class FlaskrTestCase(unittest.TestCase):
             "UPN": "5853310887000180"
         }))
         self.assertEqual(response.status_code, 200)
+        response = self.app.post("/search", data=json.dumps({
+            "birthdate": "1981-03-10"
+        }))
+        self.assertEqual(response.status_code, 200)
 
     def test_check(self):
         response = self.login(self.username, self.password)
@@ -50,6 +54,10 @@ class FlaskrTestCase(unittest.TestCase):
         self.app.set_cookie("session", session)
         response = self.app.post("/check", data=json.dumps({
             "UPN": "5853310887000180"
+        }))
+        self.assertEqual(response.status_code, 200)
+        response = self.app.post("/check", data=json.dumps({
+            "birthdate": "1981-03-10"
         }))
         self.assertEqual(response.status_code, 200)
 
