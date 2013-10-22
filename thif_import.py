@@ -108,7 +108,7 @@ def db_connect(config):
     """
     connects to the database, defines table class, creates table if necessary
     """
-    connection = "mysql://%s:%s@localhost/%s" % (config['username'],
+    connection = "mysql://%s:%s@localhost/%s?charset=utf8" % (config['username'],
                                                  config['password'],
                                                  config['db_name'])
     engine = create_engine(connection, encoding='utf8')
