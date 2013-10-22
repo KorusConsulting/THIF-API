@@ -5,8 +5,8 @@ from flask.ext.login import (LoginManager, UserMixin, login_user,
                              login_required)
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, and_
-from db import create_client_class
-from datetime import date
+from db import create_client_class, DATE
+from datetime import date, datetime
 import logging
 import json
 
@@ -23,7 +23,7 @@ with open('config.json') as f:
     app.config['LOG_FILE'] = config['logfile']
     app.config['USER'] = {'LOGIN': config['api_login'],
                           'PASSWORD': config['api_password']}
-    connect = "mysql://%s:%s@localhost/%s" % (config['username'],
+    connect = "mysql://%s:%s@localhost/%s?charset=utf8" % (config['username'],
                                               config['password'],
                                               config['db_name'])
     engine = create_engine(connect)
@@ -36,7 +36,7 @@ with open('config.json') as f:
 class APIEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, date):
-            return str(obj)
+            return datetime.strftime(obj, "%d.%m.%Y")
         else:
             return super(APIEncoder, self).default(obj)
 
@@ -85,6 +85,11 @@ def search():
         data = json.loads(request.data)
         q = []
         for k, v in data.iteritems():
+            if isinstance(getattr(Client, k).type, DATE):
+                try:
+                    v = datetime.strptime(v, "%d.%m.%Y").date()
+                except ValueError:
+                    v = None
             q.append(getattr(Client, k) == v)
         session = app.config['SESSION']
         res = list(session.query(Client).filter(and_(*q)).all())
@@ -108,6 +113,11 @@ def check():
         data = json.loads(request.data)
         q = []
         for k, v in data.iteritems():
+            if isinstance(getattr(Client, k).type, DATE):
+                try:
+                    v = datetime.strptime(v, "%d.%m.%Y").date()
+                except ValueError:
+                    v = None
             q.append(getattr(Client, k) == v)
         session = app.config['SESSION']
         count = session.query(Client).filter(and_(*q)).count()
