@@ -44,7 +44,7 @@ class FlaskrTestCase(unittest.TestCase):
         }))
         self.assertEqual(response.status_code, 200)
         response = self.app.post("/search", data=json.dumps({
-            "birthdate": "1981-03-10"
+            "birthdate": "10.03.1981"
         }))
         self.assertEqual(response.status_code, 200)
 
@@ -57,7 +57,7 @@ class FlaskrTestCase(unittest.TestCase):
         }))
         self.assertEqual(response.status_code, 200)
         response = self.app.post("/check", data=json.dumps({
-            "birthdate": "1981-03-10"
+            "birthdate": "10.03.1981"
         }))
         self.assertEqual(response.status_code, 200)
 
