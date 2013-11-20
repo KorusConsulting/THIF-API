@@ -26,7 +26,7 @@ with open('config.json') as f:
     connect = "mysql://%s:%s@localhost/%s?charset=utf8" % (config['username'],
                                               config['password'],
                                               config['db_name'])
-    engine = create_engine(connect)
+    engine = create_engine(connect, pool_recycle=600, pool_size=10)
     Client = create_client_class(engine, config['table_name'])
     app.config['SESSION'] = sessionmaker(bind=engine)()
     del config
