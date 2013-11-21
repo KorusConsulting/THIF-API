@@ -9,6 +9,7 @@ from db import create_client_class, DATE
 from datetime import date, datetime
 import logging
 import json
+import inspect
 
 
 app = Flask(__name__)
@@ -39,6 +40,18 @@ class APIEncoder(json.JSONEncoder):
             return datetime.strftime(obj, "%d.%m.%Y")
         else:
             return super(APIEncoder, self).default(obj)
+
+
+class APIDecoder(json.JSONDecoder):
+    def decode(self, obj):
+        obj = super(APIDecoder, self).decode(obj)
+        for k in obj:
+            if isinstance(getattr(Client, k).type, DATE):
+                try:
+                    obj[k] = datetime.strptime(obj[k], "%d.%m.%Y").date()
+                except ValueError:
+                    obj[k] = None
+        return obj
 
 
 class User(UserMixin):
@@ -82,22 +95,16 @@ def login():
 @login_required
 def search():
     try:
-        data = json.loads(request.data)
-        q = []
-        for k, v in data.iteritems():
-            if isinstance(getattr(Client, k).type, DATE):
-                try:
-                    v = datetime.strptime(v, "%d.%m.%Y").date()
-                except ValueError:
-                    v = None
-            q.append(getattr(Client, k) == v)
+        data = json.loads(request.data, cls=APIDecoder)
+        q = [getattr(Client, k) == v for k, v in data.iteritems()]
         session = app.config['SESSION']
         res = list(session.query(Client).filter(and_(*q)).all())
         attrs = [x for x in dir(Client)
                  if not x.startswith('_') and x != "metadata"]
-        res = [dict((attr, getattr(x, attr)) for attr in attrs) for x in res]
-        return json.dumps(res,
-                          cls=APIEncoder)
+        res = [dict((attr, getattr(x, attr)) for attr in attrs
+                    if not callable(getattr(x, attr)))
+               for x in res]
+        return json.dumps(res, cls=APIEncoder)
     except ValueError as e:
         logging.exception(e)
         return '', 400
@@ -110,15 +117,8 @@ def search():
 @login_required
 def check():
     try:
-        data = json.loads(request.data)
-        q = []
-        for k, v in data.iteritems():
-            if isinstance(getattr(Client, k).type, DATE):
-                try:
-                    v = datetime.strptime(v, "%d.%m.%Y").date()
-                except ValueError:
-                    v = None
-            q.append(getattr(Client, k) == v)
+        data = json.loads(request.data, cls=APIDecoder)
+        q = [getattr(Client, k) == v for k, v in data.iteritems()]
         session = app.config['SESSION']
         count = session.query(Client).filter(and_(*q)).count()
         if count > 0:
