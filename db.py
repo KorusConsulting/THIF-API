@@ -1,47 +1,34 @@
-from sqlalchemy.dialects.mysql import TINYINT, DATE, BIGINT
-from sqlalchemy import Column, Integer, Unicode
+# -*- coding: utf-8 -*-
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from datetime import datetime, date
+from models import Base
+import json
 
 
-Base = declarative_base()
+with open('config.json') as f:
+    config = json.loads(f.read())
+    connect = "mysql://%s:%s@localhost/%s?charset=utf8" % (config['username'],
+                                                           config['password'],
+                                                           config['db_name'])
+
+engine = create_engine(connect, convert_unicode=True, pool_recycle=600)
+db_session = scoped_session(sessionmaker(bind=engine))
+import_session = scoped_session(sessionmaker(bind=engine))
+
+#Base.query = db_session.query_property()
 
 
-def client_init(self, **kwargs):
-    for k in kwargs:
-        if isinstance(getattr(self.__class__, k).type, DATE) and\
-          not isinstance(kwargs[k], date):
-            try:
-                kwargs[k] = datetime.strptime(kwargs[k], "%d.%m.%Y")
-            except ValueError:
-                kwargs[k] = None
-        setattr(self, k, kwargs[k])
+def init_db():
+    # import all modules here that might define models so that
+    # they will be registered properly on the metadata.  Otherwise
+    # you will have to import them first before calling init_db()
+    from models import *
+    # Session.begin()
+    Base.metadata.create_all(bind=engine)
+    db_session.commit()
 
 
-def create_client_class(engine, tablename):
-    if tablename in Base.metadata.tables:
-        return Base.metadata.tables[tablename]
-
-    Client = type('Client', (Base, ), {
-        'patient_id': Column(Integer),
-        'lastname': Column(Unicode(30)),
-        'firstName': Column(Unicode(30)),
-        'midname': Column(Unicode(30)),
-        'sex': Column(TINYINT(4)),
-        'birthdate': Column(DATE),
-        'doc_series': Column(Unicode(8)),
-        'doc_number': Column(Unicode(16)),
-        'doc_code': Column(Integer),
-        'policy_series': Column(Unicode(16)),
-        'policy_number': Column(Unicode(16)),
-        'policy_doctype': Column(Integer),
-        'insurance_orgcode': Column(Unicode(12)),
-        'LPU': Column(Unicode(12)),
-        'reg_date': Column(DATE),
-        'UPN': Column(BIGINT, primary_key=True),
-        'set_attrs': client_init,
-        '__tablename__': tablename,
-        '__init__': client_init,
-    })
-    Base.metadata.create_all(engine, checkfirst=True)
-    return Client
+def shutdown_session():
+    db_session.remove()
+    import_session.remove()

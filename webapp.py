@@ -3,9 +3,9 @@
 from flask import Flask, request
 from flask.ext.login import (LoginManager, UserMixin, login_user,
                              login_required)
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine, and_
-from db import create_client_class, DATE
+from sqlalchemy import and_
+from models import Clients, Date
+from db import db_session, shutdown_session
 from datetime import date, datetime
 import logging
 import json
@@ -24,14 +24,6 @@ with open('config.json') as f:
     app.config['LOG_FILE'] = config['logfile']
     app.config['USER'] = {'LOGIN': config['api_login'],
                           'PASSWORD': config['api_password']}
-    connect = "mysql://%s:%s@localhost/%s?charset=utf8" % (config['username'],
-                                              config['password'],
-                                              config['db_name'])
-    engine = create_engine(connect, pool_recycle=600, pool_size=10)
-    Client = create_client_class(engine, config['table_name'])
-    app.config['SESSION'] = sessionmaker(bind=engine)()
-    del config
-    del connect
 
 
 class APIEncoder(json.JSONEncoder):
@@ -46,7 +38,7 @@ class APIDecoder(json.JSONDecoder):
     def decode(self, obj):
         obj = super(APIDecoder, self).decode(obj)
         for k in obj:
-            if isinstance(getattr(Client, k).type, DATE):
+            if isinstance(getattr(Clients, k).type, Date):
                 try:
                     obj[k] = datetime.strptime(obj[k], "%d.%m.%Y").date()
                 except ValueError:
@@ -63,8 +55,7 @@ class User(UserMixin):
         return self.login
 
     def is_authenticated(self):
-        if self.login == app.config['USER']["LOGIN"] and\
-          self.password == app.config['USER']["PASSWORD"]:
+        if self.login == app.config['USER']["LOGIN"] and self.password == app.config['USER']["PASSWORD"]:
             return True
         return False
 
@@ -96,10 +87,9 @@ def login():
 def search():
     try:
         data = json.loads(request.data, cls=APIDecoder)
-        q = [getattr(Client, k) == v for k, v in data.iteritems()]
-        session = app.config['SESSION']
-        res = list(session.query(Client).filter(and_(*q)).all())
-        attrs = [x for x in dir(Client)
+        q = [getattr(Clients, k) == v for k, v in data.iteritems()]
+        res = list(db_session.query(Clients).filter(and_(*q)).all())
+        attrs = [x for x in dir(Clients)
                  if not x.startswith('_') and x != "metadata"]
         res = [dict((attr, getattr(x, attr)) for attr in attrs
                     if not callable(getattr(x, attr)))
@@ -107,10 +97,12 @@ def search():
         return json.dumps(res, cls=APIEncoder)
     except ValueError as e:
         logging.exception(e)
-        return '', 400
+        res = dict(code=400, message=e.message, exc_name=e.__class__.__name__)
+        return json.dumps(res, cls=APIEncoder), 400
     except Exception as e:
         logging.exception(e)
-        return '', 500
+        res = dict(code=500, message=e.message, exc_name=e.__class__.__name__)
+        return json.dumps(res, cls=APIEncoder), 500
 
 
 @app.route("/check", methods=["POST"])
@@ -118,18 +110,24 @@ def search():
 def check():
     try:
         data = json.loads(request.data, cls=APIDecoder)
-        q = [getattr(Client, k) == v for k, v in data.iteritems()]
-        session = app.config['SESSION']
-        count = session.query(Client).filter(and_(*q)).count()
+        q = [getattr(Clients, k) == v for k, v in data.iteritems()]
+        count = db_session.query(Clients).filter(and_(*q)).count()
         if count > 0:
             return "true"
         return "false"
     except ValueError as e:
         logging.exception(e)
-        return '', 400
+        res = dict(code=400, message=e.message, exc_name=e.__class__.__name__)
+        return json.dumps(res, cls=APIEncoder), 400
     except Exception as e:
         logging.exception(e)
-        return '', 500
+        res = dict(code=500, message=e.message, exc_name=e.__class__.__name__)
+        return json.dumps(res, cls=APIEncoder), 500
+
+
+@app.after_request
+def shutdown_session(exception=None):
+    shutdown_session()
 
 
 if __name__ == "__main__":

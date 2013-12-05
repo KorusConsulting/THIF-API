@@ -5,7 +5,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 from crontab import CronTab
-from db import create_client_class
+from db import init_db, import_session, shutdown_session
+from models import Clients
 import json
 import glob
 import os
@@ -13,6 +14,7 @@ import csv
 import logging
 import sys
 import traceback
+
 
 
 CSV_FIELDS = ('id', 'enp', 'fam', 'IM', 'ot', 'w', 'dr',
@@ -51,7 +53,7 @@ def create_client(context, row):
     """
     creates class instance for row of table
     """
-    return context['Client'](**client_params(context, row))
+    return Clients(**client_params(context, row))
 
 
 def rreplace(s, old, new, occurrence):
@@ -104,25 +106,11 @@ def set_logging(config):
     return config
 
 
-def db_connect(config):
-    """
-    connects to the database, defines table class, creates table if necessary
-    """
-    connection = "mysql://%s:%s@localhost/%s?charset=utf8" % (config['username'],
-                                                 config['password'],
-                                                 config['db_name'])
-    engine = create_engine(connection, encoding='utf8')
-    config['session'] = sessionmaker(bind=engine)()
-    config['Client'] = create_client_class(engine, config['table_name'])
-    return config
-
-
 def find_files(context):
     """
     Finds all files which fit the *.csv pattern
     """
-    all_csv_files = glob.glob(os.path.join(context['csv_path'],
-                                           '*.csv'))
+    all_csv_files = glob.glob(os.path.join(context['csv_path'], '*.csv'))
     context['csv_files'] = (c for c in all_csv_files
                             if not c.endswith('_loaded.csv'))
     return context
@@ -132,7 +120,6 @@ def load_files(context):
     """
     Puts all rows of all files into database
     """
-    session = context['session']
     for csv_path in context['csv_files']:
         with open(csv_path) as csv_file:
             reader = csv.reader(csv_file,
@@ -144,15 +131,14 @@ def load_files(context):
                 row = [item.decode("cp1251") for item in row]
                 c = create_client(context, row)
                 try:
-                    session.add(c)
-                    session.commit()
+                    import_session.add(c)
+                    import_session.commit()
                 except IntegrityError:
-                    session.rollback()
-                    obj = session.query(context['Client']).\
-                      filter_by(UPN=c.UPN).first()
+                    import_session.rollback()
+                    obj = import_session.query(Clients).filter_by(UPN=c.UPN).first()
                     obj.set_attrs(**client_params(context, row))
-                    session.add(obj)
-                    session.commit()
+                    import_session.add(obj)
+                    import_session.commit()
         os.rename(csv_path, rreplace(csv_path, '.csv', '_loaded.csv', 1))
     return context
 
@@ -179,9 +165,9 @@ def csv_main():
     """
     config = bind(read_config, make_mv('config.json'))
     config = bind(set_logging, config)
-    context = bind(db_connect, config)
-    context = bind(find_files, context)
+    context = bind(find_files, config)
     context = bind(load_files, context)
+    shutdown_session()
     return context[1] or 'csv imported'
 
 
@@ -191,6 +177,7 @@ def cron_main():
     """
     config = bind(read_config, make_mv('config.json'))
     config = bind(configure_cron, config)
+    shutdown_session()
     return config[1] or 'cron configured'
 
 if __name__ == "__main__":
@@ -198,6 +185,8 @@ if __name__ == "__main__":
     parser.add_argument('mode', choices=('csv', 'cron'))
     opt = parser.parse_args()
     if opt.mode == 'csv':
+        init_db()
         logging.info(csv_main())
     elif opt.mode == 'cron':
+        init_db()
         logging.info(cron_main())
