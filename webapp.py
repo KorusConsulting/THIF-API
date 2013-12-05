@@ -5,7 +5,7 @@ from flask.ext.login import (LoginManager, UserMixin, login_user,
                              login_required)
 from sqlalchemy import and_
 from models import Clients, Date
-from db import db_session, shutdown_session
+from db import db_session, remove_session
 from datetime import date, datetime
 import logging
 import json
@@ -127,7 +127,7 @@ def check():
 
 @app.after_request
 def shutdown_session(exception=None):
-    shutdown_session()
+    remove_session()
 
 
 if __name__ == "__main__":

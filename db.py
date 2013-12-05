@@ -29,6 +29,6 @@ def init_db():
     db_session.commit()
 
 
-def shutdown_session():
+def remove_session():
     db_session.remove()
     import_session.remove()
