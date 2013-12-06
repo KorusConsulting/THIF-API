@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 from crontab import CronTab
-from db import init_db, import_session, shutdown_session
+from db import init_db, import_session, remove_session
 from models import Clients
 import json
 import glob
@@ -167,7 +167,7 @@ def csv_main():
     config = bind(set_logging, config)
     context = bind(find_files, config)
     context = bind(load_files, context)
-    shutdown_session()
+    remove_session()
     return context[1] or 'csv imported'
 
 
@@ -177,7 +177,7 @@ def cron_main():
     """
     config = bind(read_config, make_mv('config.json'))
     config = bind(configure_cron, config)
-    shutdown_session()
+    remove_session()
     return config[1] or 'cron configured'
 
 if __name__ == "__main__":

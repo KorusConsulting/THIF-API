@@ -1,5 +1,5 @@
  # -*- coding: utf-8 -*-
-
+import os
 from flask import Flask, request
 from flask.ext.login import (LoginManager, UserMixin, login_user,
                              login_required)
@@ -16,7 +16,8 @@ app = Flask(__name__)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-with open('config.json') as f:
+config_file = os.path.join(os.path.dirname(__file__), 'config.json')
+with open(config_file) as f:
     config = json.loads(f.read())
     app.config['SECRET_KEY'] = config['secret_key']
     app.config['DB_NAME'] = config['db_name']
