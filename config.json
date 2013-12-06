@@ -16,5 +16,5 @@
     	"weekday": 1,
     	"user": "gerrrr"
     },
-    "logfile": "/Users/gerrrr/Work/thif/log"
+    "logfile": "../logs"
 }
