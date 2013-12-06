@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from models import Base
 import json
 
-
-with open('config.json') as f:
+config_file = os.path.realpath('config.json')
+with open(config_file) as f:
     config = json.loads(f.read())
     connect = "mysql://%s:%s@localhost/%s?charset=utf8" % (config['username'],
                                                            config['password'],
