@@ -109,6 +109,13 @@ def check():
         return json.dumps(res, cls=APIEncoder), 500
 
 
+@app.errorhandler(500)
+def internal_error(e):
+    logging.exception(e)
+    res = dict(code=500, message=e.message, exc_name=e.__class__.__name__)
+    return json.dumps(res, cls=APIEncoder), 500
+
+
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     remove_session()

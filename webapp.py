@@ -12,7 +12,6 @@ config_file = os.path.join(os.path.dirname(__file__), 'config.json')
 with open(config_file) as f:
     config = json.loads(f.read())
     app.config['SECRET_KEY'] = config['secret_key']
-    app.config['DEBUG'] = True
     app.config['DB_NAME'] = config['db_name']
     app.config['TABLE_NAME'] = config['table_name']
     app.config['LOG_FILE'] = config['logfile']
