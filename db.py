@@ -6,7 +6,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from models import Base
 import json
 
-config_file = os.path.realpath('config.json')
+config_file = os.path.join(os.path.dirname(__file__), 'config.json')
 with open(config_file) as f:
     config = json.loads(f.read())
     connect = "mysql://%s:%s@localhost/%s?charset=utf8" % (config['username'],
