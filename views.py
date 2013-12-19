@@ -6,7 +6,10 @@ from models import Clients, Date
 from db import db_session, remove_session
 from datetime import date, datetime
 import logging
-import json
+try:
+    import json
+except ImportError:
+    import simplejson as json
 from webapp import app, login_manager
 
 
