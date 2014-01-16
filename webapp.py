@@ -3,7 +3,10 @@ import os
 from flask import Flask
 from flask.ext.login import LoginManager
 import logging
-import json
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
 
 app = Flask(__name__)

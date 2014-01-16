@@ -7,7 +7,10 @@ from sqlalchemy.exc import IntegrityError
 from crontab import CronTab
 from db import init_db, import_session, remove_session
 from models import Clients
-import json
+try:
+    import json
+except ImportError:
+    import simplejson as json
 import glob
 import os
 import csv

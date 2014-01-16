@@ -4,7 +4,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from models import Base
-import json
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
 config_file = os.path.join(os.path.dirname(__file__), 'config.json')
 with open(config_file) as f:
