@@ -44,6 +44,15 @@ class User(UserMixin):
         return False
 
 
+def standart_oms_hook(data):
+    if 'policy_doctype' in data and data['policy_doctype'] == 3:
+        new_data = data.copy()
+        new_data['UPN'] = data['policy_number']
+        del new_data['policy_number']
+        return new_data
+    return data
+
+
 @login_manager.user_loader
 def load_user(userid):
     if userid == app.config["USER"]["LOGIN"]:
@@ -55,6 +64,7 @@ def load_user(userid):
 def login():
     try:
         data = json.loads(request.data)
+        data = standart_oms_hook(data)
         u = User(data['login'], data['password'])
         if u.is_authenticated():
             login_user(u)
@@ -71,6 +81,7 @@ def login():
 def search():
     try:
         data = json.loads(request.data, cls=APIDecoder)
+        data = standart_oms_hook(data)
         q = [getattr(Clients, k) == v for k, v in data.iteritems()]
         res = list(db_session.query(Clients).filter(and_(*q)).all())
         attrs = [x for x in dir(Clients)
@@ -94,6 +105,7 @@ def search():
 def check():
     try:
         data = json.loads(request.data, cls=APIDecoder)
+        data = standart_oms_hook(data)
         q = [getattr(Clients, k) == v for k, v in data.iteritems()]
         count = db_session.query(Clients).filter(and_(*q)).count()
         if count > 0:

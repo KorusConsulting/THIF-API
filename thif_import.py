@@ -46,6 +46,8 @@ def client_params(context, row):
     if kwargs['policy_number'].endswith(',00'):
         kwargs['policy_number'] = rreplace(kwargs['policy_number'],
                                            ',00', '', 1)
+    if kwargs['UPN'].endswith(',00'):
+        kwargs['UPN'] = rreplace(kwargs['UPN'], ',00', '', 1)
     return kwargs
 
 

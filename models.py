@@ -11,7 +11,7 @@ class Clients(Base):
     __tablename__ = 'clients'
     __table_args__ = {'mysql_engine': 'InnoDB'}
 
-    UPN = Column(BigInteger, primary_key=True)
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
     patient_id = Column(Integer)
     lastname = Column(Unicode(30))
     firstName = Column(Unicode(30))
@@ -24,6 +24,7 @@ class Clients(Base):
     policy_series = Column(Unicode(16))
     policy_number = Column(Unicode(16))
     policy_doctype = Column(Integer)
+    UPN = Column(Unicode(16), unique=True)
     insurance_orgcode = Column(Unicode(12))
     LPU = Column(Unicode(12))
     reg_date = Column(Date)
