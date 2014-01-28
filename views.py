@@ -56,6 +56,14 @@ def standart_oms_hook(data):
     return data
 
 
+def standart_oms_result_hook(result):
+    if result:
+        for data in result:
+            if 'policy_doctype' in data and data['policy_doctype'] == 3:
+                data['policy_number'] = data['UPN']
+    return result
+
+
 @login_manager.user_loader
 def load_user(userid):
     if userid == app.config["USER"]["LOGIN"]:
@@ -92,6 +100,7 @@ def search():
         res = [dict((attr, getattr(x, attr)) for attr in attrs
                     if not callable(getattr(x, attr)))
                for x in res]
+        res = standart_oms_result_hook(res)
         return json.dumps(res, cls=APIEncoder)
     except ValueError as e:
         logging.exception(e)
