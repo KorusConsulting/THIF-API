@@ -1,4 +1,4 @@
- # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from flask import request
 from flask.ext.login import UserMixin, login_user, login_required
 from sqlalchemy import and_

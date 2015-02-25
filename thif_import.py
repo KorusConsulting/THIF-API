@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-
+from datetime import datetime
 from argparse import ArgumentParser
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from crontab import CronTab
 from db import init_db, import_session, remove_session
@@ -51,6 +50,7 @@ def client_params(context, row):
                                            ',00', '', 1)
     if kwargs['UPN'].endswith(',00'):
         kwargs['UPN'] = rreplace(kwargs['UPN'], ',00', '', 1)
+
     return kwargs
 
 
@@ -132,18 +132,28 @@ def load_files(context):
             fields = tuple(reader.next())
             if fields != CSV_FIELDS:
                 raise ValueError("%s: wrong fields" % csv_path)
+
             for row in reader:
                 row = [item.decode("cp1251") for item in row]
-                c = create_client(context, row)
-                try:
-                    import_session.add(c)
-                    import_session.commit()
-                except IntegrityError:
-                    import_session.rollback()
-                    obj = import_session.query(Clients).filter_by(UPN=c.UPN).first()
-                    obj.set_attrs(**client_params(context, row))
+                obj = import_session.query(Clients).filter(
+                    or_(Clients.patient_id == row[0], Clients.UPN == row[1])).first()
+                cp = client_params(context, row)
+                if obj:
+                    for key, value in cp.iteritems():
+                        if value and (key == 'birthdate' or key == 'reg_date'):
+                                value = datetime.strptime(value, "%d.%m.%Y")
+                        setattr(obj, key, value)
+                        try:
+                            import_session.add(obj)
+                            import_session.commit()
+                        except IntegrityError as e:
+                            import_session.rollback()
+                else:
+                    obj = create_client(context, row)
+
                     import_session.add(obj)
                     import_session.commit()
+
         os.rename(csv_path, rreplace(csv_path, '.csv', '_loaded.csv', 1))
     return context
 
