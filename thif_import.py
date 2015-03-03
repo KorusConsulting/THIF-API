@@ -126,7 +126,7 @@ def load_files(context):
     Puts all rows of all files into database
     """
     for csv_path in context['csv_files']:
-        with open(csv_path) as csv_file:
+        with open(csv_path, 'rb') as csv_file:
             reader = csv.reader(csv_file,
                                 delimiter=str(context['delimiter']))
             fields = tuple(reader.next())
